@@ -1,0 +1,98 @@
+
+function StaggeredGrid(params){
+    const CT = params.container; assert CT;
+    const template = CT.first;
+    const spacing = params.spacing || 10;
+    var   scrollmain = null;    // 瀑布流展示容器
+    var   records = null;
+    var   ghost = [];         // 保存所有被移除的
+    var   baseW = params.baseW || 270;
+    var   _VL = {
+          "top" : CT.box(#top, #border, #view).toInteger(),
+          "height" : CT.box(#height, #border, #self).toInteger(),
+          "column" :{}
+    };
+
+    // 加载展示内容并动态添加到尾部
+    function pumpAfter(){
+        function detachToCache(){
+            var temp = {};
+            var tempKey=[];
+            var bottom = 0;
+            var el, vc;
+            for ( var ul in scrollmain.$$(ul) ){
+                for( el in ul.$$(li)){
+                    bottom = el.box(#bottom, #border, #view) - _VL.top;
+                    if (bottom > 0) break;
+                    bottom += tempKey.length * 0.1;
+                    temp[bottom] = el;
+                    tempKey.push(bottom);
+                }
+                if (el) {
+                    vc = _VL.column[ul.@#idx];
+                    vc["referElB"] = el.box(#top, #border, #parent);
+                    vc["referElI"] = el.@#idx;
+                }
+            }
+            if (tempKey == []) return 0;
+            tempKey = tempKey.sort();
+            var c = Integer.min( records.length-ghost.length-BUFFER_SIZE, tempKey.length );
+            for( var i=0; i<c; i++ ){
+                el = temp[tempKey[i]];
+                if(!el) return 0;
+                ghost.push( el.@#idx );
+                el.style#margin-top = undefined;
+                cache.push(el);
+                el.detach();
+            }
+            return c;
+        }
+        var count_of_detach = detachToCache();
+        var list_length = BUFFER_SIZE - count_of_detach;
+    }
+    function setupSetObserver(apply){
+
+    }
+    // 初始化瀑布流布局
+    function initStaggeredGrid(){
+        // 获取容器的宽高
+        var (ct_w, ct_h) = CT.box(#dimension, #inner);
+        // 基于 baseW 计算瀑布流的列数
+        var column_count = Math.floor( ct_w / baseW.toFloat() + 0.5 ).toInteger();
+        // 基于列数计算每一列的宽度
+        var column_width = Math.floor( ( ct_w + spacing.toFloat() ) / column_count - spacing );
+        CT.style#flow = "vertical";
+        // 创建顶部提示
+        CT.$append(<div.scrolltop></div>);
+        // 瀑布流展示容器
+        scrollmain = Element.create{div,class:"scrollmain"};
+        CT.append(scrollmain);
+        scrollmain.style#flow = "horizontal";
+        var el;
+        for( var i=0; i<column_count; i++ ){
+            scrollmain.insert( el = Element.create{ ul, idx:i } );
+            el.style.set{ width : px(column_width) };
+            _VL.column[i.toString()] = {height : 0};
+        }
+        // 创建底部提示
+        CT.$append(<div.scrollbottom></div>);
+    }
+    CT[#value] = property(v){
+        get return records;
+        set {
+            if ( records !== v ) {
+                if ( records )
+                    setupSetObserver(false);
+                if ( records = v )
+                    setupSetObserver(true);
+            }
+            CT.clear();
+            if ( records ) {
+                initStaggeredGrid();
+                pumpAfter.call(CT);
+            }
+        }
+    }
+    CT.clear();
+    return CT;
+}

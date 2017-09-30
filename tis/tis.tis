@@ -1,0 +1,30 @@
+// include "common.tis";
+include "vlist.tis";
+self.ready = function() {
+
+    var records = [];
+    for(var i=0;i<99;i++){
+        records.push({
+            id: i,
+            elHeight: 0
+        });
+    }
+
+    function setupItemView(recordNo, record, itemEl) {
+        function myRandom(min,max){
+            return Math.random()*(max-min+1)+min;
+        }
+        var h = record["elHeight"];
+        if (!h) {
+            h = Math.round( myRandom(125,300) );
+        }
+        itemEl.style#height = px(h);
+        itemEl.$(p).text = record.id;
+    }
+    var vlist = StaggeredGrid {
+      container     : $(#SG),
+      bufferSize    : 20,
+      setupItemView : setupItemView
+    };
+    vlist.value = records;
+}

@@ -1,0 +1,26 @@
+@import "common.scs";
+#SG{
+    width: 680px;
+    height: 400px;
+    outline: 1px red solid;
+    display: block;
+    margin-top: 50px;
+    overflow-x: hidden;
+    /*overflow-y: scroll-indicator;*/
+    overflow-y: hidden;
+}
+/*#SG > div{
+    width: *;
+    border-spacing: 10dip;
+}*/
+/*ul{
+    border-spacing: 10dip;
+}*/
+li{
+    width: *;
+    background: gold;
+    overflow: hidden;
+}
+li p{
+    font-size: 60px;
+}
