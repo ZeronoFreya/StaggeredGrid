@@ -16,6 +16,11 @@
 /*ul{
     border-spacing: 10dip;
 }*/
+.scrolltop,.scrollbottom{
+    height: 50px;
+    /*outline: 1px red solid;*/
+}
+
 li{
     width: *;
     background: gold;

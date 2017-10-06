@@ -1,26 +1,101 @@
 
 function StaggeredGrid(params){
+    const SCROLL_DELTA = 5.0; // px, for mouse wheel
+    const SCROLL_DECEL = 0.95; // 减速 
+    const SCROLL_OUT_DECEL = 0.74; // 当滚动条超出左右边界时的减速
+    const SCROLL_STEP_DELAY = View.ANIMATION_TIMER_SPAN; // 毫秒
+    var   velocity = 0.0;
+    var   isOut = false;
     const CT = params.container; assert CT;
     const template = CT.first;
+    const BUFFER_SIZE = params.bufferSize || 100;
     const spacing = params.spacing || 10;
+    var   showRecord = params.renderItemView || null;
+    var   setupRecord = params.setupItemView || null;
     var   scrollmain = null;    // 瀑布流展示容器
     var   records = null;
+    var   wheelStep = 30;
+    var   cache = [];
     var   ghost = [];         // 保存所有被移除的
     var   baseW = params.baseW || 270;
     var   _VL = {
           "top" : CT.box(#top, #border, #view).toInteger(),
           "height" : CT.box(#height, #border, #self).toInteger(),
+          "minColumnH" : 0,
+          "maxColumnMt" : 0,
           "column" :{}
     };
-
+    function dogc() { gc(); }
+    function recordAt(n) {
+        var r = records[n];
+        // if(!r && recordData ) {
+        //   setupSetObserver(false, true);
+        //   r = records[n] = recordData(n);
+        //   setupSetObserver(true, true);
+        // }
+        return r;
+    }
+    function createRecViewer(rec) {
+        var t = cache.pop() || template.clone();
+        // assert !t.state.current;
+        // t.data = rec;
+        return t;
+    }
+    function appends(el, record){
+        if (record["elHeight"] && record["belongColumn"]) {
+            scrollmain.$(ul[idx={record.belongColumn}]).append(el);
+            return -1;
+        }
+        var vc = _VL.column;
+        var min_vch = -1;
+        var vch,min_idx;
+        for( var idx=0; idx<vc.length; idx++){
+            if ( ((vch = vc[idx.toString()].height) < min_vch) || min_vch == -1 ) {
+                min_vch = vch;
+                min_idx = idx;
+            }
+        }
+        var min_vc = scrollmain.$(ul[idx={min_idx}]);
+        min_vc.append(el);
+        return min_idx.toString();
+    }
+    function prepends(el, record){
+        if (record["elHeight"] && record["belongColumn"]) {
+            var ul = scrollmain.$(ul[idx={record.belongColumn}]);
+            ul.prepend(el);
+            return -1;
+        }
+    }
+    function setMargin() {
+        var el,marginTop;
+        _VL["maxColumnMt"] = 0;
+        _VL["minColumnH"] = -1;
+        var h = 0;
+        for ( var ul in scrollmain.$$(ul) ){
+            // 获取最小列的高度
+            h = ul.box(#height, #border, #self).toInteger();
+            if ( h < _VL["minColumnH"] || _VL["minColumnH"] == -1 ) {
+                _VL["minColumnH"] = h;
+            }
+            // 获取第一个节点距父节点的距离，即为需要设置的 marginTop
+            el = ul.first;
+            marginTop = records[el.@#idx.toInteger()].top;
+            el.style#margin-top = px(marginTop);
+            // 获取最大的 marginTop
+            _VL["maxColumnMt"] = Integer.max( _VL["maxColumnMt"], marginTop );
+        }
+    }
     // 加载展示内容并动态添加到尾部
-    function pumpAfter(){
+    function pumpAfter(isFirst = 0){
+        // 缓存前半部并返回缓存数量
         function detachToCache(){
             var temp = {};
             var tempKey=[];
             var bottom = 0;
             var el, vc;
+            // 遍历每一列
             for ( var ul in scrollmain.$$(ul) ){
+                // 遍历当前列中所有节点
                 for( el in ul.$$(li)){
                     bottom = el.box(#bottom, #border, #view) - _VL.top;
                     if (bottom > 0) break;
@@ -47,8 +122,79 @@ function StaggeredGrid(params){
             }
             return c;
         }
-        var count_of_detach = detachToCache();
-        var list_length = BUFFER_SIZE - count_of_detach;
+        var q1 = detachToCache();
+        var list_length = isFirst ? 0 : ( BUFFER_SIZE - q1 );
+        // 数据开始读取的下标
+        var ni = Integer.min( ghost.length + list_length, records.length );
+        // 数据结束读取的下标
+        var niend = Integer.min(ni + BUFFER_SIZE - list_length, records.length);
+        var vc = _VL.column;
+        var (elHeight,belongColumn) = 0;
+        for( var i = ni; i < niend; ++i ){
+            // 获取传入的节点参数
+            var rec = recordAt(i);
+            // 从缓存中获取detach节点或创建新节点
+            var t = createRecViewer(rec);
+            t.@#idx = i;
+            // 添加节点到DOM并返回添加的位置
+            belongColumn = appends(t, rec);
+            showRecord(i,rec,t);
+            // 记录节点位置信息
+            if ( rec["elHeight"] && rec["belongColumn"] ) continue;
+            elHeight = t.box(#height, #border, #self).toInteger();
+            rec["top"] = vc[belongColumn].height;
+            vc[belongColumn].height += elHeight+spacing;
+            rec["elHeight"] = elHeight;
+            rec["belongColumn"] = belongColumn;
+        }
+        return q1;
+    }
+    function pumpBefore() {
+        function detachToCache(){
+            var temp = {};
+            var tempKey=[];
+            var top = 0;
+            var el, vc;
+            for ( var ul in scrollmain.$$(ul) ){
+                for( el in ul.$$(li)){
+                    top = el.box(#top, #border, #view) - _VL.top;
+                    if (top < _VL.height ) continue;
+                    top += tempKey.length * 0.1;
+                    temp[top] = el;
+                    tempKey.push(top);
+                }
+                if ( el = ul.first ) {
+                    vc = _VL.column[ul.@#idx];
+                    vc["referElB"] = el.box(#top, #border, #parent);
+                    vc["referElI"] = el.@#idx;
+                    el.style#margin-top = undefined;
+                }
+            }
+            if (tempKey == []) return 0;
+            tempKey = tempKey.sort();
+            var c = Integer.min( ghost.length, tempKey.length );
+            // stdout.println("实际cache的个数：", c);
+            for( var i=tempKey.length-1; i>=tempKey.length-c; i-- ){
+                el = temp[tempKey[i]];
+                cache.push(el);
+                el.detach();
+            }
+            return c;
+        }
+        // stdout.println("pumpBefore");
+        var q2 = detachToCache();
+        var list_length = BUFFER_SIZE - q2;
+        var idx = 0;
+        for(var i=0; i<q2; i++){
+            idx = ghost.pop().toInteger();
+            var rec = recordAt(idx);
+            var t = createRecViewer(rec);
+            t.@#idx = idx;
+            prepends(t, rec);
+            // setupRecordObserver(rec,t);
+            showRecord(idx,rec,t);
+        }
+        return q2;
     }
     function setupSetObserver(apply){
 
@@ -67,11 +213,11 @@ function StaggeredGrid(params){
         // 瀑布流展示容器
         scrollmain = Element.create{div,class:"scrollmain"};
         CT.append(scrollmain);
-        scrollmain.style#flow = "horizontal";
+        scrollmain.style.set{ flow : "horizontal", border-spacing : px(spacing) };
         var el;
         for( var i=0; i<column_count; i++ ){
             scrollmain.insert( el = Element.create{ ul, idx:i } );
-            el.style.set{ width : px(column_width) };
+            el.style.set{ width : px(column_width), border-spacing : px(spacing) };
             _VL.column[i.toString()] = {height : 0};
         }
         // 创建底部提示
@@ -89,10 +235,126 @@ function StaggeredGrid(params){
             CT.clear();
             if ( records ) {
                 initStaggeredGrid();
-                pumpAfter.call(CT);
+                pumpAfter.call(CT, 1);
             }
         }
     }
+    if(!showRecord) showRecord = function(i,r,el){
+        if(setupRecord) setupRecord(i,r,el);
+    }
+    function scrollEnded() {
+        function animateBackTop(distance) {
+            var scroll_y = CT.scroll(#top);
+            var target_y = scroll_y + distance;
+            var target_y_half = scroll_y + distance / 2;
+            var v = 1;
+            CT.animate(:{
+                scroll_y += v;
+                if (scroll_y >= target_y) {
+                    CT.scrollTo(0, target_y, false, true);
+                    return 0;
+                }
+                CT.scrollTo(0, scroll_y, false, true);
+                if (scroll_y < target_y_half) ++v;
+                else if (--v == 0) v = 1;
+                return SCROLL_STEP_DELAY;
+            });
+        }
+        function animateBackBottom(distance) {
+            var scroll_y = CT.scroll(#top);
+            var target_y = scroll_y - distance;
+            var target_y_half = scroll_y - distance / 2;
+            var v = 1;
+            CT.animate(:{
+                scroll_y -= v;
+                if (scroll_y <= target_y) {
+                    CT.scrollTo(0, target_y, false, true);
+                    return 0;
+                }
+                CT.scrollTo(0, scroll_y, false, true);
+                if (scroll_y > target_y_half) ++v;
+                else if (--v == 0) v = 1;
+                return SCROLL_STEP_DELAY;
+            });
+        }
+        var firstTop = scrollmain.box(#top, #border, #parent);
+        var lastBottom = scrollmain.box(#bottom, #border, #parent);
+        // var height = CT.box(#height, #inner);
+        if (firstTop > 0) animateBackTop.call(CT, firstTop);
+        else if (lastBottom < _VL.height ) animateBackBottom.call(CT, _VL.height - lastBottom);
+    }
+    function doScrollAnumation(){
+        if (CT.state.animating) return;
+        var (scroll_top, firstTop, lastBottom, height) = 0;
+        // var isPump = 0;
+        function animationStep() {
+            //当出界时,让velocity迅速的降到0.5以下
+            velocity *= isOut ? SCROLL_OUT_DECEL : SCROLL_DECEL;
+            if (Math.abs(velocity) < 0.5) {
+                CT.post(::scrollEnded());
+                //返回0 结束动画
+                return 0;
+            }
+            scroll_top = CT.scroll(#top) + velocity.toInteger();
+            CT.scrollTo(0, scroll_top, false, true);
+            if ( scroll_top < _VL["maxColumnMt"] ) {
+                pumpBefore();
+                CT.update();
+                setMargin();
+            }else if( scroll_top + _VL.height > _VL["minColumnH"] ) {
+                pumpAfter();
+                CT.update();
+                setMargin();
+            }
+            //判断是否出界
+            firstTop = scrollmain.box(#top, #border, #parent);
+            lastBottom = scrollmain.box(#bottom, #border, #parent);
+            isOut = false;
+            if (firstTop > 0 || lastBottom < _VL.height )
+                isOut = true;
+            return SCROLL_STEP_DELAY;
+        }
+        CT.animate(animationStep);
+    }
+    /*
+    function wheelUp(){
+        var st = CT.scroll(#top);
+        // CT.scrollTo(0, st - wheelStep, false, true);
+        if ( st - wheelStep < _VL["maxColumnMt"]) {
+            pumpBefore();
+            CT.update();
+            setMargin();
+        }
+    }
+    function wheelDown(){
+        var st = CT.scroll(#top);
+        // CT.scrollTo(0, st + wheelStep, false, true);
+        if ( st + _VL.height + wheelStep > _VL["minColumnH"] ) {
+            pumpAfter();
+            CT.update();
+            setMargin();
+        }
+    }
+    */
+    function mousewheel(evt) {
+        if (evt.wheelDelta < 0) {
+            //内容上移(滚轮向内滚动)
+            velocity += SCROLL_DELTA;
+            // wheelDown();
+        } else {
+            //内容下移(滚轮向外滚动)
+            velocity -= SCROLL_DELTA;
+            // wheelUp();
+        }
+        doScrollAnumation();
+        return true;
+    }
+    CT.onMouse = function(evt) {
+      switch(evt.type) {
+        case Event.MOUSE_WHEEL: mousewheel(evt); break;
+      }
+    }
+
     CT.clear();
     return CT;
 }
