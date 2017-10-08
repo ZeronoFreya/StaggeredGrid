@@ -8,6 +8,7 @@ function StaggeredGrid(params){
     var   isOut = false;
     const CT = params.container; assert CT;
     const template = CT.first;
+    const temp_tag = template.tag;
     const BUFFER_SIZE = params.bufferSize || 100;
     const spacing = params.spacing || 10;
     var   showRecord = params.renderItemView || null;
@@ -61,6 +62,8 @@ function StaggeredGrid(params){
     }
     function prepends(el, record){
         if (record["elHeight"] && record["belongColumn"]) {
+            if(record.state == 1)
+                el.state.checked = true;
             var ul = scrollmain.$(ul[idx={record.belongColumn}]);
             ul.prepend(el);
             return -1;
@@ -117,9 +120,12 @@ function StaggeredGrid(params){
                 if(!el) return 0;
                 ghost.push( el.@#idx );
                 el.style#margin-top = undefined;
+                // el.state.checked = false;
                 cache.push(el);
                 el.detach();
+                el.state.clear(0xFFFFFFFF); // clear all flags
             }
+            CT.timer(1s,dogc);     // throttle GC call as DOM object may hold various native resources
             return c;
         }
         var q1 = detachToCache();
@@ -176,9 +182,12 @@ function StaggeredGrid(params){
             // stdout.println("实际cache的个数：", c);
             for( var i=tempKey.length-1; i>=tempKey.length-c; i-- ){
                 el = temp[tempKey[i]];
+                // el.state.checked = false;
                 cache.push(el);
                 el.detach();
+                el.state.clear(0xFFFFFFFF); // clear all flags
             }
+            CT.timer(1s,dogc);     // throttle GC call as DOM object may hold various native resources
             return c;
         }
         // stdout.println("pumpBefore");
@@ -236,6 +245,8 @@ function StaggeredGrid(params){
             if ( records ) {
                 initStaggeredGrid();
                 pumpAfter.call(CT, 1);
+                var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
+                CT.scrollTo(0, scroll_y, false, true);
             }
         }
     }
@@ -316,26 +327,6 @@ function StaggeredGrid(params){
         }
         CT.animate(animationStep);
     }
-    /*
-    function wheelUp(){
-        var st = CT.scroll(#top);
-        // CT.scrollTo(0, st - wheelStep, false, true);
-        if ( st - wheelStep < _VL["maxColumnMt"]) {
-            pumpBefore();
-            CT.update();
-            setMargin();
-        }
-    }
-    function wheelDown(){
-        var st = CT.scroll(#top);
-        // CT.scrollTo(0, st + wheelStep, false, true);
-        if ( st + _VL.height + wheelStep > _VL["minColumnH"] ) {
-            pumpAfter();
-            CT.update();
-            setMargin();
-        }
-    }
-    */
     function mousewheel(evt) {
         if (evt.wheelDelta < 0) {
             //内容上移(滚轮向内滚动)
@@ -354,7 +345,16 @@ function StaggeredGrid(params){
         case Event.MOUSE_WHEEL: mousewheel(evt); break;
       }
     }
-
+    CT.on("click",temp_tag,function(){
+        // stdout.println( records[this.@#idx.toInteger()]);
+        // stdout.println("vc1",JSON.stringify(records[this.@#idx.toInteger()],"  "));
+        if( var isCheck = CT.$({temp_tag}:checked) ){
+            isCheck.state.checked = false;
+            records[isCheck.@#idx.toInteger()].state = 0;
+        }
+        this.state.checked = true;
+        records[this.@#idx.toInteger()].state = 1;
+    })
     CT.clear();
     return CT;
 }

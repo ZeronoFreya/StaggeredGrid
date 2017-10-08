@@ -29,3 +29,8 @@ li{
 li p{
     font-size: 60px;
 }
+
+li:checked{
+    background: green;
+    color: #fff;
+}
