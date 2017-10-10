@@ -241,9 +241,9 @@ function StaggeredGrid(params){
                 if ( records = v )
                     setupSetObserver(true);
             }
-            CT.clear();
+            // CT.clear();
             if ( records ) {
-                initStaggeredGrid();
+                // initStaggeredGrid();
                 pumpAfter.call(CT, 1);
                 var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
                 CT.scrollTo(0, scroll_y, false, true);
@@ -356,5 +356,6 @@ function StaggeredGrid(params){
         records[this.@#idx.toInteger()].state = 1;
     })
     CT.clear();
+    initStaggeredGrid();
     return CT;
 }

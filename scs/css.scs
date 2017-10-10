@@ -7,7 +7,7 @@
     margin-top: 50px;
     overflow-x: hidden;
     /*overflow-y: scroll-indicator;*/
-    overflow-y: hidden;
+    /*overflow-y: hidden;*/
 }
 /*#SG > div{
     width: *;
