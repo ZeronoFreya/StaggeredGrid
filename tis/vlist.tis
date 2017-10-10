@@ -235,14 +235,14 @@ function StaggeredGrid(params){
     CT[#value] = property(v){
         get return records;
         set {
-            if ( records !== v ) {
-                if ( records )
-                    setupSetObserver(false);
-                if ( records = v )
-                    setupSetObserver(true);
-            }
+            // if ( records !== v ) {
+            //     if ( records )
+            //         setupSetObserver(false);
+            //     if ( records = v )
+            //         setupSetObserver(true);
+            // }
             // CT.clear();
-            if ( records ) {
+            if ( records = v ) {
                 // initStaggeredGrid();
                 pumpAfter.call(CT, 1);
                 var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
