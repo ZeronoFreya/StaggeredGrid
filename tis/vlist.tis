@@ -95,22 +95,22 @@ function StaggeredGrid(params){
             var temp = {};
             var tempKey=[];
             var bottom = 0;
-            var el, vc;
+            var el;
             // 遍历每一列
             for ( var ul in scrollmain.$$(ul) ){
                 // 遍历当前列中所有节点
                 for( el in ul.$$(li)){
                     bottom = el.box(#bottom, #border, #view) - _VL.top;
                     if (bottom > 0) break;
-                    bottom += tempKey.length * 0.1;
+                    bottom += ("0." + tempKey.length).toFloat();
                     temp[bottom] = el;
                     tempKey.push(bottom);
                 }
-                if (el) {
-                    vc = _VL.column[ul.@#idx];
-                    vc["referElB"] = el.box(#top, #border, #parent);
-                    vc["referElI"] = el.@#idx;
-                }
+                // if (el) {
+                    // vc = _VL.column[ul.@#idx];
+                    // vc["referElB"] = el.box(#top, #border, #parent);
+                    // vc["referElI"] = el.@#idx;
+                // }
             }
             if (tempKey == []) return 0;
             tempKey = tempKey.sort();
@@ -160,7 +160,7 @@ function StaggeredGrid(params){
             var temp = {};
             var tempKey=[];
             var top = 0;
-            var el, vc;
+            var el;
             for ( var ul in scrollmain.$$(ul) ){
                 for( el in ul.$$(li)){
                     top = el.box(#top, #border, #view) - _VL.top;
@@ -170,9 +170,9 @@ function StaggeredGrid(params){
                     tempKey.push(top);
                 }
                 if ( el = ul.first ) {
-                    vc = _VL.column[ul.@#idx];
-                    vc["referElB"] = el.box(#top, #border, #parent);
-                    vc["referElI"] = el.@#idx;
+                    // vc = _VL.column[ul.@#idx];
+                    // vc["referElB"] = el.box(#top, #border, #parent);
+                    // vc["referElI"] = el.@#idx;
                     el.style#margin-top = undefined;
                 }
             }
@@ -347,7 +347,7 @@ function StaggeredGrid(params){
     }
     CT.on("click",temp_tag,function(){
         // stdout.println( records[this.@#idx.toInteger()]);
-        // stdout.println("vc1",JSON.stringify(records[this.@#idx.toInteger()],"  "));
+        // stdout.println("vc1",JSON.stringify(_VL.column,"  "));
         if( var isCheck = CT.$({temp_tag}:checked) ){
             isCheck.state.checked = false;
             records[isCheck.@#idx.toInteger()].state = 0;
