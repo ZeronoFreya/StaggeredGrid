@@ -153,7 +153,7 @@ function StaggeredGrid(params){
             rec["elHeight"] = elHeight;
             rec["belongColumn"] = belongColumn;
         }
-        return q1;
+        return niend;
     }
     function pumpBefore() {
         function detachToCache(){
@@ -250,10 +250,25 @@ function StaggeredGrid(params){
             }
         }
     }
+    CT[#appendVal] = property(v){
+        get return 0;
+        set {
+            if ( records ){
+                records = records.concat(v);
+            }else{
+                records = v;
+                pumpAfter.call(CT, 1);
+                var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
+                CT.scrollTo(0, scroll_y, false, true);
+            }
+        }
+    }
+
     if(!showRecord) showRecord = function(i,r,el){
         if(setupRecord) setupRecord(i,r,el);
     }
     function scrollEnded() {
+        if (CT.state.animating) return;
         function animateBackTop(distance) {
             var scroll_y = CT.scroll(#top);
             var target_y = scroll_y + distance;
@@ -293,16 +308,17 @@ function StaggeredGrid(params){
         // var height = CT.box(#height, #inner);
         if (firstTop > 0) animateBackTop.call(CT, firstTop);
         else if (lastBottom < _VL.height ) animateBackBottom.call(CT, _VL.height - lastBottom);
+
     }
     function doScrollAnumation(){
         if (CT.state.animating) return;
-        var (scroll_top, firstTop, lastBottom, height) = 0;
+        var (scroll_top, height) = 0;
         // var isPump = 0;
         function animationStep() {
             //当出界时,让velocity迅速的降到0.5以下
             velocity *= isOut ? SCROLL_OUT_DECEL : SCROLL_DECEL;
-            if (Math.abs(velocity) < 0.5) {
-                CT.post(::scrollEnded());
+            if ( Math.abs(velocity) < 0.5) {
+                if ( isOut ) CT.post(::scrollEnded());
                 //返回0 结束动画
                 return 0;
             }
@@ -313,15 +329,25 @@ function StaggeredGrid(params){
                 CT.update();
                 setMargin();
             }else if( scroll_top + _VL.height > _VL["minColumnH"] ) {
-                pumpAfter();
+                var niend = pumpAfter();
                 CT.update();
                 setMargin();
+                if (records.length < 100 && niend == records.length ) {
+                    stdout.println("end");
+                    var records2 = [];
+                    for(var i=40;i<60;i++){
+                        records2.push({
+                            elHeight: 0
+                        });
+                    }
+                    CT.appendVal = records2;
+                }
             }
             //判断是否出界
-            firstTop = scrollmain.box(#top, #border, #parent);
-            lastBottom = scrollmain.box(#bottom, #border, #parent);
+            // firstTop = scrollmain.box(#top, #border, #parent);
+            // lastBottom = scrollmain.box(#bottom, #border, #parent);
             isOut = false;
-            if (firstTop > 0 || lastBottom < _VL.height )
+            if ( scrollmain.box(#top, #border, #parent) > 0 || scrollmain.box(#bottom, #border, #parent) < _VL.height )
                 isOut = true;
             return SCROLL_STEP_DELAY;
         }
