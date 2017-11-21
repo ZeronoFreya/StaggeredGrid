@@ -1,7 +1,7 @@
 
 function StaggeredGrid(params){
     const SCROLL_DELTA = 5.0; // px, for mouse wheel
-    const SCROLL_DECEL = 0.95; // 减速 
+    const SCROLL_DECEL = 0.95; // 减速
     const SCROLL_OUT_DECEL = 0.74; // 当滚动条超出左右边界时的减速
     const SCROLL_STEP_DELAY = View.ANIMATION_TIMER_SPAN; // 毫秒
     var   velocity = 0.0;
@@ -117,7 +117,7 @@ function StaggeredGrid(params){
             var c = Integer.min( records.length-ghost.length-BUFFER_SIZE, tempKey.length );
             for( var i=0; i<c; i++ ){
                 el = temp[tempKey[i]];
-                if(!el) return 0;
+                if(!el.isElement) return 0;
                 ghost.push( el.@#idx );
                 el.style#margin-top = undefined;
                 // el.state.checked = false;
@@ -183,6 +183,7 @@ function StaggeredGrid(params){
             for( var i=tempKey.length-1; i>=tempKey.length-c; i-- ){
                 el = temp[tempKey[i]];
                 // el.state.checked = false;
+                if(!el.isElement) return 0;
                 cache.push(el);
                 el.detach();
                 el.state.clear(0xFFFFFFFF); // clear all flags
@@ -251,7 +252,6 @@ function StaggeredGrid(params){
         }
     }
     CT[#appendVal] = property(v){
-        get return 0;
         set {
             if ( records ){
                 records = records.concat(v);
