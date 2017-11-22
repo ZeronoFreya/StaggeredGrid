@@ -6,6 +6,7 @@ function StaggeredGrid(params){
     const SCROLL_STEP_DELAY = View.ANIMATION_TIMER_SPAN; // 毫秒
     var   velocity = 0.0;
     var   isOut = false;
+    var   isScroll = ""; // 避免pumpBefore与pumpAfter同时执行
     const CT = params.container; assert CT;
     const template = CT.first;
     const temp_tag = template.tag;
@@ -66,7 +67,6 @@ function StaggeredGrid(params){
                 el.state.checked = true;
             var ul = scrollmain.$(ul[idx={record.belongColumn}]);
             ul.prepend(el);
-            return -1;
         }
     }
     function setMargin() {
@@ -75,21 +75,24 @@ function StaggeredGrid(params){
         _VL["minColumnH"] = -1;
         var h = 0;
         for ( var ul in scrollmain.$$(ul) ){
-            // 获取最小列的高度
-            h = ul.box(#height, #border, #self).toInteger();
-            if ( h < _VL["minColumnH"] || _VL["minColumnH"] == -1 ) {
-                _VL["minColumnH"] = h;
-            }
             // 获取第一个节点距父节点的距离，即为需要设置的 marginTop
             el = ul.first;
             marginTop = records[el.@#idx.toInteger()].top;
             el.style#margin-top = px(marginTop);
             // 获取最大的 marginTop
             _VL["maxColumnMt"] = Integer.max( _VL["maxColumnMt"], marginTop );
+            // CT.update();
+            // 获取最小列的高度
+            // h = ul.box(#height, #border, #self).toInteger();
+            h = _VL.column[ul.@#idx].height;
+            if ( h < _VL["minColumnH"] || _VL["minColumnH"] == -1 ) {
+                _VL["minColumnH"] = h;
+            }
         }
     }
     // 加载展示内容并动态添加到尾部
     function pumpAfter(isFirst = 0){
+        stdout.println("pumpAfter");
         // 缓存前半部并返回缓存数量
         function detachToCache(){
             var temp = {};
@@ -117,7 +120,7 @@ function StaggeredGrid(params){
             var c = Integer.min( records.length-ghost.length-BUFFER_SIZE, tempKey.length );
             for( var i=0; i<c; i++ ){
                 el = temp[tempKey[i]];
-                if(!el.isElement) return 0;
+                if(!el.root) return 0;
                 ghost.push( el.@#idx );
                 el.style#margin-top = undefined;
                 // el.state.checked = false;
@@ -156,6 +159,7 @@ function StaggeredGrid(params){
         return niend;
     }
     function pumpBefore() {
+        stdout.println("pumpBefore");
         function detachToCache(){
             var temp = {};
             var tempKey=[];
@@ -170,20 +174,17 @@ function StaggeredGrid(params){
                     tempKey.push(top);
                 }
                 if ( el = ul.first ) {
-                    // vc = _VL.column[ul.@#idx];
-                    // vc["referElB"] = el.box(#top, #border, #parent);
-                    // vc["referElI"] = el.@#idx;
                     el.style#margin-top = undefined;
                 }
             }
             if (tempKey == []) return 0;
             tempKey = tempKey.sort();
+            // stdout.println("tempKey",tempKey);
             var c = Integer.min( ghost.length, tempKey.length );
-            // stdout.println("实际cache的个数：", c);
             for( var i=tempKey.length-1; i>=tempKey.length-c; i-- ){
                 el = temp[tempKey[i]];
                 // el.state.checked = false;
-                if(!el.isElement) return 0;
+                if(!el.root) return 0;
                 cache.push(el);
                 el.detach();
                 el.state.clear(0xFFFFFFFF); // clear all flags
@@ -246,6 +247,7 @@ function StaggeredGrid(params){
             if ( records = v ) {
                 // initStaggeredGrid();
                 pumpAfter.call(CT, 1);
+                setMargin();
                 var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
                 CT.scrollTo(0, scroll_y, false, true);
             }
@@ -258,6 +260,7 @@ function StaggeredGrid(params){
             }else{
                 records = v;
                 pumpAfter.call(CT, 1);
+                setMargin();
                 var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
                 CT.scrollTo(0, scroll_y, false, true);
             }
@@ -324,14 +327,18 @@ function StaggeredGrid(params){
             }
             scroll_top = CT.scroll(#top) + velocity.toInteger();
             CT.scrollTo(0, scroll_top, false, true);
-            if ( scroll_top < _VL["maxColumnMt"] ) {
+
+            // stdout.println("ww",scroll_top,_VL.height,_VL["maxColumnMt"],_VL["minColumnH"]);
+            if ( isScroll === "up" && scroll_top < _VL["maxColumnMt"] ) {
                 pumpBefore();
                 CT.update();
                 setMargin();
-            }else if( scroll_top + _VL.height > _VL["minColumnH"] ) {
+                isScroll = "";
+            }else if( isScroll === "dn" && scroll_top + _VL.height > _VL["minColumnH"] ) {
                 var niend = pumpAfter();
                 CT.update();
                 setMargin();
+                isScroll = "";
                 if (records.length < 100 && niend == records.length ) {
                     stdout.println("end");
                     var records2 = [];
@@ -343,6 +350,7 @@ function StaggeredGrid(params){
                     CT.appendVal = records2;
                 }
             }
+
             //判断是否出界
             // firstTop = scrollmain.box(#top, #border, #parent);
             // lastBottom = scrollmain.box(#bottom, #border, #parent);
@@ -357,10 +365,12 @@ function StaggeredGrid(params){
         if (evt.wheelDelta < 0) {
             //内容上移(滚轮向内滚动)
             velocity += SCROLL_DELTA;
+            isScroll = "dn";
             // wheelDown();
         } else {
             //内容下移(滚轮向外滚动)
             velocity -= SCROLL_DELTA;
+            isScroll = "up";
             // wheelUp();
         }
         doScrollAnumation();
