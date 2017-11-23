@@ -4,10 +4,10 @@
     height: 400px;
     outline: 1px red solid;
     display: block;
-    margin-top: 50px;
+    margin-top: 200px;
     overflow-x: hidden;
     /*overflow-y: scroll-indicator;*/
-    /*overflow-y: hidden;*/
+    overflow-y: hidden;
 }
 /*#SG > div{
     width: *;

@@ -1,12 +1,12 @@
 
 function StaggeredGrid(params){
-    const SCROLL_DELTA = 5.0; // px, for mouse wheel
-    const SCROLL_DECEL = 0.95; // 减速
+    const SCROLL_DELTA = 10.0;   // px, for mouse wheel
+    const SCROLL_DECEL = 0.95;  // 减速
     const SCROLL_OUT_DECEL = 0.74; // 当滚动条超出左右边界时的减速
     const SCROLL_STEP_DELAY = View.ANIMATION_TIMER_SPAN; // 毫秒
     var   velocity = 0.0;
     var   isOut = false;
-    var   isScroll = ""; // 避免pumpBefore与pumpAfter同时执行
+    var   isScroll = "";        // 避免pumpBefore与pumpAfter同时执行
     const CT = params.container; assert CT;
     const template = CT.first;
     const temp_tag = template.tag;
@@ -18,7 +18,8 @@ function StaggeredGrid(params){
     var   records = null;
     var   wheelStep = 30;
     var   cache = [];
-    var   ghost = [];         // 保存所有被移除的
+    var   offset = 100;         // 距离offset时就响应pumpBefore或pumpAfter
+    var   ghost = [];           // 保存所有被移除的
     var   baseW = params.baseW || 270;
     var   _VL = {
           "top" : CT.box(#top, #border, #view).toInteger(),
@@ -29,7 +30,7 @@ function StaggeredGrid(params){
     };
     function dogc() { gc(); }
     function recordAt(n) {
-        var r = records[n];
+        var r = records[n.toInteger()];
         // if(!r && recordData ) {
         //   setupSetObserver(false, true);
         //   r = records[n] = recordData(n);
@@ -44,7 +45,7 @@ function StaggeredGrid(params){
         return t;
     }
     function appends(el, record){
-        if (record["elHeight"] && record["belongColumn"]) {
+        if (record["belongColumn"]) {
             scrollmain.$(ul[idx={record.belongColumn}]).append(el);
             return -1;
         }
@@ -74,17 +75,21 @@ function StaggeredGrid(params){
         _VL["maxColumnMt"] = 0;
         _VL["minColumnH"] = -1;
         var h = 0;
+        var rec;
         for ( var ul in scrollmain.$$(ul) ){
             // 获取第一个节点距父节点的距离，即为需要设置的 marginTop
             el = ul.first;
-            marginTop = records[el.@#idx.toInteger()].top;
+            marginTop = recordAt( el.@#idx ).top;
             el.style#margin-top = px(marginTop);
             // 获取最大的 marginTop
             _VL["maxColumnMt"] = Integer.max( _VL["maxColumnMt"], marginTop );
             // CT.update();
             // 获取最小列的高度
             // h = ul.box(#height, #border, #self).toInteger();
-            h = _VL.column[ul.@#idx].height;
+            // h = _VL.column[ul.@#idx].height;
+            rec = recordAt( ul.last.@#idx );
+            h = rec.top.toInteger() + rec.elHeight.toInteger();
+            // stdout.println("hh",h, _VL.column[ul.@#idx].height, lth);
             if ( h < _VL["minColumnH"] || _VL["minColumnH"] == -1 ) {
                 _VL["minColumnH"] = h;
             }
@@ -92,7 +97,6 @@ function StaggeredGrid(params){
     }
     // 加载展示内容并动态添加到尾部
     function pumpAfter(isFirst = 0){
-        stdout.println("pumpAfter");
         // 缓存前半部并返回缓存数量
         function detachToCache(){
             var temp = {};
@@ -131,25 +135,26 @@ function StaggeredGrid(params){
             CT.timer(1s,dogc);     // throttle GC call as DOM object may hold various native resources
             return c;
         }
-        var q1 = detachToCache();
-        var list_length = isFirst ? 0 : ( BUFFER_SIZE - q1 );
+        // var detach_length = detachToCache();
+        var list_length = isFirst ? 0 : ( BUFFER_SIZE - detachToCache() );
         // 数据开始读取的下标
         var ni = Integer.min( ghost.length + list_length, records.length );
         // 数据结束读取的下标
         var niend = Integer.min(ni + BUFFER_SIZE - list_length, records.length);
         var vc = _VL.column;
         var (elHeight,belongColumn) = 0;
+        var rec,t;
         for( var i = ni; i < niend; ++i ){
             // 获取传入的节点参数
-            var rec = recordAt(i);
+            rec = recordAt(i);
             // 从缓存中获取detach节点或创建新节点
-            var t = createRecViewer(rec);
+            t = createRecViewer(rec);
             t.@#idx = i;
             // 添加节点到DOM并返回添加的位置
             belongColumn = appends(t, rec);
             showRecord(i,rec,t);
             // 记录节点位置信息
-            if ( rec["elHeight"] && rec["belongColumn"] ) continue;
+            if ( rec["belongColumn"] ) continue;
             elHeight = t.box(#height, #border, #self).toInteger();
             rec["top"] = vc[belongColumn].height;
             vc[belongColumn].height += elHeight+spacing;
@@ -159,7 +164,6 @@ function StaggeredGrid(params){
         return niend;
     }
     function pumpBefore() {
-        stdout.println("pumpBefore");
         function detachToCache(){
             var temp = {};
             var tempKey=[];
@@ -169,7 +173,7 @@ function StaggeredGrid(params){
                 for( el in ul.$$(li)){
                     top = el.box(#top, #border, #view) - _VL.top;
                     if (top < _VL.height ) continue;
-                    top += tempKey.length * 0.1;
+                    top += ("0." + tempKey.length).toFloat();
                     temp[top] = el;
                     tempKey.push(top);
                 }
@@ -189,23 +193,23 @@ function StaggeredGrid(params){
                 el.detach();
                 el.state.clear(0xFFFFFFFF); // clear all flags
             }
-            CT.timer(1s,dogc);     // throttle GC call as DOM object may hold various native resources
+            CT.timer(1s,dogc);
             return c;
         }
         // stdout.println("pumpBefore");
-        var q2 = detachToCache();
-        var list_length = BUFFER_SIZE - q2;
+        var detach_length = detachToCache();
+        var list_length = BUFFER_SIZE - detach_length;
         var idx = 0;
-        for(var i=0; i<q2; i++){
+        var rec,t;
+        for(var i=0; i<detach_length; i++){
             idx = ghost.pop().toInteger();
-            var rec = recordAt(idx);
-            var t = createRecViewer(rec);
+            rec = recordAt(idx);
+            t = createRecViewer(rec);
             t.@#idx = idx;
             prepends(t, rec);
             // setupRecordObserver(rec,t);
             showRecord(idx,rec,t);
         }
-        return q2;
     }
     function setupSetObserver(apply){
 
@@ -233,25 +237,6 @@ function StaggeredGrid(params){
         }
         // 创建底部提示
         CT.$append(<div.scrollbottom></div>);
-    }
-    CT[#value] = property(v){
-        get return records;
-        set {
-            // if ( records !== v ) {
-            //     if ( records )
-            //         setupSetObserver(false);
-            //     if ( records = v )
-            //         setupSetObserver(true);
-            // }
-            // CT.clear();
-            if ( records = v ) {
-                // initStaggeredGrid();
-                pumpAfter.call(CT, 1);
-                setMargin();
-                var scroll_y = scrollmain.box(#top, #border, #parent).toInteger();
-                CT.scrollTo(0, scroll_y, false, true);
-            }
-        }
     }
     CT[#appendVal] = property(v){
         set {
@@ -329,14 +314,14 @@ function StaggeredGrid(params){
             CT.scrollTo(0, scroll_top, false, true);
 
             // stdout.println("ww",scroll_top,_VL.height,_VL["maxColumnMt"],_VL["minColumnH"]);
-            if ( isScroll === "up" && scroll_top < _VL["maxColumnMt"] ) {
+            if ( isScroll === "up" && scroll_top - offset < _VL["maxColumnMt"] ) {
                 pumpBefore();
-                CT.update();
+                // CT.update();
                 setMargin();
                 isScroll = "";
-            }else if( isScroll === "dn" && scroll_top + _VL.height > _VL["minColumnH"] ) {
+            }else if( isScroll === "dn" && scroll_top + _VL.height + offset > _VL["minColumnH"] ) {
                 var niend = pumpAfter();
-                CT.update();
+                // CT.update();
                 setMargin();
                 isScroll = "";
                 if (records.length < 100 && niend == records.length ) {
@@ -366,12 +351,10 @@ function StaggeredGrid(params){
             //内容上移(滚轮向内滚动)
             velocity += SCROLL_DELTA;
             isScroll = "dn";
-            // wheelDown();
         } else {
             //内容下移(滚轮向外滚动)
             velocity -= SCROLL_DELTA;
             isScroll = "up";
-            // wheelUp();
         }
         doScrollAnumation();
         return true;
@@ -386,10 +369,10 @@ function StaggeredGrid(params){
         // stdout.println("vc1",JSON.stringify(_VL.column,"  "));
         if( var isCheck = CT.$({temp_tag}:checked) ){
             isCheck.state.checked = false;
-            records[isCheck.@#idx.toInteger()].state = 0;
+            recordAt( isCheck.@#idx ).state = 0;
         }
         this.state.checked = true;
-        records[this.@#idx.toInteger()].state = 1;
+        recordAt( this.@#idx ).state = 1;
     })
     CT.clear();
     initStaggeredGrid();
