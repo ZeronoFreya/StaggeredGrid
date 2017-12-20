@@ -1,0 +1,102 @@
+class SmoothScrolling
+{
+    const SCROLL_DELTA = 5.0; // px, for mouse wheel
+    const SCROLL_DECEL = 0.95; // 减速
+    const SCROLL_OUT_DECEL = 0.74; // 当滚动条超出左右边界时的减速
+    const SCROLL_STEP_DELAY = View.ANIMATION_TIMER_SPAN; // 毫秒
+    var velocity = 0.0;
+    var isOut = false;
+    var _this;
+
+    // 重写
+    function scrollStep(scroll) {}
+    function scrollArea() {
+        var firstTop = this.first.box(#top, #margin, #parent);
+        var lastBottom = this.last.box(#bottom, #margin, #parent);
+        return (firstTop, lastBottom);
+    }
+
+    function this(container) {
+        container.subscribe(mousewheel, Event.MOUSE, Event.MOUSE_WHEEL);
+        container.height = container.box(#height, #border, #self).toInteger();
+        _this = this;
+    }
+
+    function scrollEnded(firstTop, lastBottom) {
+        if (this.state.animating) return;
+        function animatefront(distance) {
+            var scroll_y = this.scroll(#top);
+            var target_y = scroll_y + distance;
+            var target_y_half = scroll_y + distance / 2;
+            var v = 1;
+            this.animate(: {
+                scroll_y += v;
+                if (scroll_y >= target_y) {
+                    this.scrollTo(0, target_y, false, true);
+                    return 0;
+                }
+                this.scrollTo(0, scroll_y, false, true);
+                if (scroll_y < target_y_half) ++v;
+                else if (--v == 0) v = 1;
+                return SCROLL_STEP_DELAY;
+            });
+        }
+        function animateBack(distance) {
+            var scroll_y = this.scroll(#top);
+            var target_y = scroll_y + distance;
+            var target_y_half = scroll_y + distance / 2;
+            var v = 1;
+            this.animate(:{
+                scroll_y -= v;
+                if (scroll_y <= target_y) {
+                    this.scrollTo(0, target_y, false, true);
+                    return 0;
+                }
+                this.scrollTo(0, scroll_y, false, true);
+                if (scroll_y > target_y_half) ++v;
+                else if (--v == 0) v = 1;
+                return SCROLL_STEP_DELAY;
+            });
+        }
+        if (firstTop > 0) animatefront.call(this, firstTop);
+        else if (lastBottom < this.height) animateBack.call(this, lastBottom - this.height);
+
+    }
+    function doScrollAnumation() {
+        if (this.state.animating) return;
+        var (scroll_top, firstTop, lastBottom) = 0;
+        function animationStep() {
+            //当出界时,让velocity迅速的降到0.5以下
+            velocity *= isOut ? SCROLL_OUT_DECEL: SCROLL_DECEL;
+            if (Math.abs(velocity) < 0.5 || this.stopAnimation) {
+                this.post(::_this.scrollEnded.call(this,firstTop, lastBottom));
+                //返回0 结束动画
+                return 0;
+            }
+            scroll_top = this.scroll(#top) + velocity.toInteger();
+            this.scrollTo(0, scroll_top, false, true);
+            _this.scrollStep.call(this, scroll_top);
+            //判断是否出界
+            // firstTop = this.first.box(#top, #margin, #parent);
+            // lastBottom = this.last.box(#bottom, #margin, #parent);
+            (firstTop, lastBottom) = _this.scrollArea.call(this);
+            isOut = false;
+            if (firstTop > 0 || lastBottom < this.height) isOut = true;
+            return SCROLL_STEP_DELAY;
+        }
+        this.animate(animationStep);
+    }
+    function mousewheel(evt) {
+        if (evt.wheelDelta < 0) {
+            //下滚(滚轮向内滚动)
+            velocity += SCROLL_DELTA;
+        } else {
+            //上滚(滚轮向外滚动)
+            velocity -= SCROLL_DELTA;
+        }
+        // this : container
+        _this.doScrollAnumation.call( this );
+        return true;
+    }
+
+}
