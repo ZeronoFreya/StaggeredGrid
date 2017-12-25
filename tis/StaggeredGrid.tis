@@ -2,7 +2,7 @@ include "SmoothScrolling.tis";
 
 class StaggeredGrid : SmoothScrolling
 {
-    var template,_VL,scrollmain,records,temp_tag;
+    var template,_VL,scrolltop,scrollmain,scrollbottom,records,temp_tag;
     var cache = [];
     var ghost = [];
     var scrollPos = 0;
@@ -15,11 +15,10 @@ class StaggeredGrid : SmoothScrolling
         creatEnd    : function(){}
     };
     function this(params){
-        // stdout.println(JSON.stringify(param,"  "));
-        // stdout.println(param.contain);
-        // this.configs(params);
         cfg.extend(params);
+        assert cfg.container;
         template = cfg.container.first;
+        assert template;
         temp_tag = template.tag;
         _VL = {
             "top" : cfg.container.box(#top, #border, #view).toInteger(),
@@ -253,7 +252,7 @@ class StaggeredGrid : SmoothScrolling
         var column_width = Math.floor( ( ct_w + cfg.spacing.toFloat() ) / column_count - cfg.spacing );
         cfg.container.style#flow = "vertical";
         // 创建顶部提示
-        cfg.container.$append(<div.scrolltop></div>);
+        scrolltop = cfg.container.$append(<div.scrolltop>已经到顶了</div>);
         // 瀑布流展示容器
         scrollmain = Element.create{div,class:"scrollmain"};
         cfg.container.append(scrollmain);
@@ -265,7 +264,7 @@ class StaggeredGrid : SmoothScrolling
             _VL.column[i.toString()] = {height : 0};
         }
         // 创建底部提示
-        cfg.container.$append(<div.scrollbottom></div>);
+        scrollbottom = cfg.container.$append(<div.scrollbottom>没有更多了</div>);
     }
     function append( v ){
         if ( records ){
