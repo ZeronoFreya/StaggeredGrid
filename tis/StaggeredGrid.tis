@@ -2,7 +2,7 @@ include "SmoothScrolling.tis";
 
 class StaggeredGrid : SmoothScrolling
 {
-    var template,_VL,scrolltop,scrollmain,scrollbottom,records,temp_tag;
+    var template,_VL,scrolltop,scrollmain,scrollbottom,records;
     var cache = [];
     var ghost = [];
     var scrollPos = 0;
@@ -19,13 +19,12 @@ class StaggeredGrid : SmoothScrolling
         assert cfg.container;
         template = cfg.container.first;
         assert template;
-        temp_tag = template.tag;
         _VL = {
-            "top" : cfg.container.box(#top, #border, #view).toInteger(),
-            "height" : cfg.container.box(#height, #border, #self).toInteger(),
-            "minColumnH" : 0,
-            "maxColumnMt" : 0,
-            "column" :{}
+            "top"           : cfg.container.box(#top, #border, #view).toInteger(),
+            "height"        : cfg.container.box(#height, #border, #self).toInteger(),
+            "minColumnH"   : 0,
+            "maxColumnMt"  : 0,
+            "column"        : {}
         };
         cfg.container.clear();
         this.initStaggeredGrid();
@@ -33,6 +32,7 @@ class StaggeredGrid : SmoothScrolling
     }
     function dogc() { gc(); }
 
+    // 重写
     function scrollArea(){
         var firstTop = scrollmain.box(#top, #border, #parent);
         var lastBottom = scrollmain.box(#bottom, #border, #parent);
