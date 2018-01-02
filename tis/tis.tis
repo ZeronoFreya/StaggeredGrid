@@ -25,4 +25,10 @@ self.ready = function() {
         creatEnd : creatEnd
     }
     sg.append(records);
+    var sg2 = new StaggeredGrid{
+        container: $(#SG2),
+        bufferSize    : 20,
+        creatEnd : creatEnd
+    }
+    sg2.append(records);
 }

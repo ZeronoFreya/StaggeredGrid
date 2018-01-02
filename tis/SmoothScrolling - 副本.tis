@@ -8,10 +8,9 @@ class SmoothScrolling
     var isOut = false;
     var _this;
 
-    function this(child) {
-        child.cfg.container.subscribe(mousewheel, Event.MOUSE, Event.MOUSE_WHEEL);
-        child.cfg.container.height = child.cfg.container.box(#height, #border, #self).toInteger();
-        this.child = child;
+    function this(container) {
+        container.subscribe(mousewheel, Event.MOUSE, Event.MOUSE_WHEEL);
+        container.height = container.box(#height, #border, #self).toInteger();
         _this = this;
     }
 
@@ -29,8 +28,8 @@ class SmoothScrolling
      * @return {[firstTop, lastBottom]}
      */
     function scrollArea() {
-        var firstTop = this.cfg.container.first.box(#top, #margin, #parent);
-        var lastBottom = this.cfg.container.last.box(#bottom, #margin, #parent);
+        var firstTop = this.first.box(#top, #margin, #parent);
+        var lastBottom = this.last.box(#bottom, #margin, #parent);
         return (firstTop, lastBottom);
     }
 
@@ -88,11 +87,11 @@ class SmoothScrolling
             }
             scroll_top = this.scroll(#top) + velocity.toInteger();
             this.scrollTo(0, scroll_top, false, true);
-            _this.scrollStep.call(_this.child, scroll_top);
+            _this.scrollStep.call(this, scroll_top);
             //判断是否出界
             // firstTop = this.first.box(#top, #margin, #parent);
             // lastBottom = this.last.box(#bottom, #margin, #parent);
-            (firstTop, lastBottom) = _this.scrollArea.call(_this.child);
+            (firstTop, lastBottom) = _this.scrollArea.call(this);
             isOut = false;
             if (firstTop > 0 || lastBottom < this.height) isOut = true;
             return SCROLL_STEP_DELAY;

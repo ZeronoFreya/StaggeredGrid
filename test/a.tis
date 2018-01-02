@@ -1,0 +1,52 @@
+namespace Tt
+{
+    class Fa : Behavior
+    {
+        var asa = 1;
+        function init(p){
+            this.subscribe(mousewheel, Event.MOUSE, Event.MOUSE_WHEEL);
+            stdout.println("fa",this);
+            this.SCROLL_DELTA = p.SCROLL_DELTA;
+            this.velocity = 0;
+        }
+        function a1(v){
+            stdout.println("fa1",v);
+        }
+        function a2(){
+            stdout.println("fa2");
+        }
+        function mousewheel(evt) {
+            if (evt.wheelDelta < 0) {
+                //下滚(滚轮向内滚动)
+                this.velocity += this.SCROLL_DELTA;
+
+            } else {
+                //上滚(滚轮向外滚动)
+                this.velocity -= this.SCROLL_DELTA;
+            }
+            asa += 1;
+            this.a1(this.velocity,asa);
+            return true;
+        }
+    }
+    class Ch : Fa
+    {
+        function a1(v,a){
+            stdout.println("ch1",v,this);
+        }
+    }
+}
+
+self.ready = function(){
+    stdout.println("ready");
+    var sg1 = $(#SG);
+    sg1.prototype = Tt.Ch;
+    sg1.init{
+        SCROLL_DELTA:3
+    };
+    // var sg2 = $(#SG2);
+    // sg2.prototype = Tt.Ch;
+    // sg2.init{
+    //     SCROLL_DELTA:4
+    // };
+}

@@ -1,0 +1,39 @@
+class A{
+    function this(t){
+        this.cd = t;
+        this.aaa(this.cd);
+    }
+    function aaa(cd){
+    }
+
+}
+class Ca : A{
+    var _this;
+
+    function this(params){
+        _this = this;
+        this.a = params.container;
+        this.c = params.key;
+        this.a.$(.btn).on("click",function(){
+            // Error: (undefined) has no property - html
+            _this.a.$(p[name={_this.c}]).html = _this.c;
+        })
+        super(this);
+        // aaa();
+    }
+    function aaa(cd){
+        stdout.println("x_x",this.cd.c);
+    }
+
+}
+self.ready = function() {
+     var sg = new Ca{
+        container: $(#SG),
+        key:"btn1"
+    }
+    // var sg2 = new Ca{
+    //     container: $(#SG2),
+    //     key:"btn2"
+    // }
+
+}

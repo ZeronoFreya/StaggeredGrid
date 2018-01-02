@@ -1,0 +1,16 @@
+.sg{
+    width: 680px;
+    height: 400px;
+    outline: 1px red solid;
+    display: block;
+    /*margin-top: 200px;*/
+    overflow-x: hidden;
+    overflow-y: hidden;
+    /*prototype:"Tt.Ch";*/
+}
+
+li{
+    width: *;
+    background: gold;
+    overflow: hidden;
+}
