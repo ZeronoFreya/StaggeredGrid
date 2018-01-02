@@ -7,6 +7,12 @@ self.ready = function() {
             elHeight: 0
         });
     }
+    var records2 = [];
+    for(var i=0;i<40;i++){
+        records2.push({
+            elHeight: 0
+        });
+    }
     function creatEnd(recordNo, record, itemEl) {
         function myRandom(min,max){
             return Math.random()*(max-min+1)+min;
@@ -18,17 +24,32 @@ self.ready = function() {
         itemEl.style#height = px(h);
         itemEl.$(p).text = recordNo;
     }
-
-    var sg = new StaggeredGrid{
-        container: $(#SG),
-        bufferSize    : 20,
-        creatEnd : creatEnd
-    }
-    sg.append(records);
-    var sg2 = new StaggeredGrid{
-        container: $(#SG2),
-        bufferSize    : 20,
-        creatEnd : creatEnd
-    }
-    sg2.append(records);
+    var sg1 = $(#SG);
+    sg1.prototype = StaggeredGrid;
+    sg1.init{
+        "baseW" : 270,
+        "bufferSize" : 20,
+        "creatEnd" : creatEnd
+    };
+    sg1.setValue(records);
+    var sg2 = $(#SG2);
+    sg2.prototype = StaggeredGrid;
+    sg2.init{
+        "baseW" : 270,
+        "bufferSize" : 20,
+        "creatEnd" : creatEnd
+    };
+    sg2.setValue(records2);
+    // var sg = new StaggeredGrid{
+    //     container: $(#SG),
+    //     bufferSize    : 20,
+    //     creatEnd : creatEnd
+    // }
+    // sg.append(records);
+    // var sg2 = new StaggeredGrid{
+    //     container: $(#SG2),
+    //     bufferSize    : 20,
+    //     creatEnd : creatEnd
+    // }
+    // sg2.append(records);
 }

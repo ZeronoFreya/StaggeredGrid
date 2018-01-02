@@ -2,21 +2,19 @@ include "SmoothScrolling.tis";
 
 class StaggeredGrid : SmoothScrolling
 {
-    function this(params){
+    function init(params){
         this.cfg = {
             baseW       : 270,
             bufferSize  : 100,
-            container   : null,
             offset      : 100,               // 距离offset时就响应pumpBefore或pumpAfter
             spacing     : 10,
             creatEnd    : function(){}      // 子节点创建完成后执行的操作
         }.extend(params);
-        assert this.cfg.container;
-        this.template = this.cfg.container.first;
+        this.template = this.first;
         assert this.template;
         this._VL = {
-            "top"           : this.cfg.container.box(#top, #border, #view).toInteger(),
-            "height"        : this.cfg.container.box(#height, #border, #self).toInteger(),
+            "top"           : this.box(#top, #border, #view).toInteger(),
+            "height"        : this.box(#height, #border, #self).toInteger(),
             "minColumnH"   : 0,
             "maxColumnMt"  : 0,
             "column"        : {}
@@ -24,9 +22,9 @@ class StaggeredGrid : SmoothScrolling
         this.cache = [];
         this.ghost = [];
         this.scrollPos = 0;
-        this.cfg.container.clear();
+        this.clear();
         this.initStaggeredGrid();
-        super(this);
+        super(this.cfg);
     }
     // property value(v) {
     //   get {
@@ -82,7 +80,7 @@ class StaggeredGrid : SmoothScrolling
                         elHeight: 0
                     });
                 }
-                this.cfg.container.appendVal = records2;
+                this.setValue(records2);
             }
         }
         this.scrollPos = scroll;
@@ -174,7 +172,7 @@ class StaggeredGrid : SmoothScrolling
                 el.detach();
                 el.state.clear(0xFFFFFFFF); // clear all flags
             }
-            this.cfg.container.timer(1s,dogc);
+            this.timer(1s,dogc);
             return c;
         }
         // stdout.println("pumpBefore");
@@ -228,7 +226,7 @@ class StaggeredGrid : SmoothScrolling
                 el.detach();
                 el.state.clear(0xFFFFFFFF); // clear all flags
             }
-            this.cfg.container.timer(1s,this.dogc);     // throttle GC call as DOM object may hold various native resources
+            this.timer(1s,this.dogc);     // throttle GC call as DOM object may hold various native resources
             return c;
         }
         // var detach_length = detachToCache();
@@ -271,6 +269,7 @@ class StaggeredGrid : SmoothScrolling
         for ( var ul in this.scrollmain.$$(ul) ){
             // 获取第一个节点距父节点的距离，即为需要设置的 marginTop
             el = ul.first;
+            assert el;
             marginTop = this.recordAt( el.@#idx ).top;
             el.style#margin-top = px(marginTop);
             // 获取最大的 marginTop
@@ -292,17 +291,17 @@ class StaggeredGrid : SmoothScrolling
      */
     function initStaggeredGrid(){
         // 获取容器的宽高
-        var (ct_w, ct_h) = this.cfg.container.box(#dimension, #inner);
+        var (ct_w, ct_h) = this.box(#dimension, #inner);
         // 基于 baseW 计算瀑布流的列数
         var column_count = Math.floor( ct_w / this.cfg.baseW.toFloat() + 0.5 ).toInteger();
         // 基于列数计算每一列的宽度
         var column_width = Math.floor( ( ct_w + this.cfg.spacing.toFloat() ) / column_count - this.cfg.spacing );
-        this.cfg.container.style#flow = "vertical";
+        this.style#flow = "vertical";
         // 创建顶部提示
-        this.scrolltop = this.cfg.container.$append(<div.scrolltop>已经到顶了</div>);
+        this.scrolltop = this.$append(<div.scrolltop>已经到顶了</div>);
         // 瀑布流展示容器
         this.scrollmain = Element.create{div,class:"scrollmain"};
-        this.cfg.container.append(this.scrollmain);
+        this.append(this.scrollmain);
         this.scrollmain.style.set{ flow : "horizontal", border-spacing : px(this.cfg.spacing) };
         var el;
         for( var i=0; i<column_count; i++ ){
@@ -311,14 +310,14 @@ class StaggeredGrid : SmoothScrolling
             this._VL.column[i.toString()] = {height : 0};
         }
         // 创建底部提示
-        this.scrollbottom = this.cfg.container.$append(<div.scrollbottom>没有更多了</div>);
+        this.scrollbottom = this.$append(<div.scrollbottom>没有更多了</div>);
     }
     /**
      * 填充数据
      * @param  v
      * @return {[type]}
      */
-    function append( v ){
+    function setValue( v ){
         if ( this.records ){
             this.records = this.records.concat(v);
         }else{
@@ -327,7 +326,7 @@ class StaggeredGrid : SmoothScrolling
             this.pumpAfter(1);
             this.setMargin();
             var scroll_y = this.scrollmain.box(#top, #border, #parent).toInteger();
-            this.cfg.container.scrollTo(0, scroll_y, false, true);
+            this.scrollTo(0, scroll_y, false, true);
         }
     }
 }

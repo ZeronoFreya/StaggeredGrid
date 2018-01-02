@@ -1,3 +1,4 @@
+include "SmoothScrolling.tis";
 namespace Tt
 {
     class Fa : Behavior
@@ -12,7 +13,7 @@ namespace Tt
         function a1(v){
             stdout.println("fa1",v);
         }
-        function a2(){
+        function _a2(){
             stdout.println("fa2");
         }
         function mousewheel(evt) {
@@ -36,14 +37,26 @@ namespace Tt
         }
     }
 }
-
+class Ba : SmoothScrolling
+{
+    function init(params){
+        this.cfg = {}.extend(params);
+        super( this.cfg );
+        stdout.println(JSON.stringify(this.cfg,"  "));
+    }
+    function scrollStep(scroll) {
+        stdout.println("scroll",scroll,this);
+    }
+}
 self.ready = function(){
     stdout.println("ready");
     var sg1 = $(#SG);
-    sg1.prototype = Tt.Ch;
+    sg1.prototype = Ba;
     sg1.init{
-        SCROLL_DELTA:3
+        "baseW" : 270,
+            "SCROLL_DELTA" : 6.0
     };
+
     // var sg2 = $(#SG2);
     // sg2.prototype = Tt.Ch;
     // sg2.init{
